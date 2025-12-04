@@ -2,7 +2,7 @@ import socket
 import time
 from typing import Any, cast
 
-from scapy.all import (
+from scapy.all import (  # type: ignore[attr-defined]
     ICMP,
     ICMPv6DestUnreach,
     ICMPv6EchoReply,
