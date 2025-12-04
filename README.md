@@ -97,11 +97,11 @@ python main.py -p 53 1.1.1.1 udp
 Запустите командную строку от имени администратора:
 ```cmd
 # Запуск от имени администратора
-python traceroute.py google.com
+python main.py google.com
 ```
 
 ### Linux/macOS
 Используйте sudo:
 ```bash
-sudo python3 traceroute.py google.com
+sudo python3 main.py google.com
 ```
