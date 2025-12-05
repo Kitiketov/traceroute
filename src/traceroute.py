@@ -4,16 +4,17 @@ from typing import Any, cast
 
 from scapy.all import (  # type: ignore[attr-defined]
     ICMP,
+    IP,
+    TCP,
+    UDP,
     ICMPv6DestUnreach,
     ICMPv6EchoReply,
     ICMPv6EchoRequest,
-    IP,
     IPv6,
-    TCP,
-    UDP,
     Raw,
     sr1,
 )
+from scapy.packet import Packet
 
 from src.defaults import (
     DEFAULT_INTERVAL,
@@ -33,9 +34,7 @@ from src.whois_client import WhoisClient
 def resolve_target(target: str, port: int | None) -> tuple[str, bool]:
     """Разрешает хост в IP и возвращает IP и флаг IPv6."""
     try:
-        addrinfo = socket.getaddrinfo(
-            target, port or 0, socket.AF_UNSPEC, socket.SOCK_DGRAM
-        )
+        addrinfo = socket.getaddrinfo(target, port or 0, socket.AF_UNSPEC, socket.SOCK_DGRAM)
     except socket.gaierror as exc:
         raise ValueError(f"Cannot resolve {target}") from exc
     chosen = None
@@ -51,17 +50,17 @@ def resolve_target(target: str, port: int | None) -> tuple[str, bool]:
 
 class Traceroute:
     def __init__(
-            self,
-            target: str,
-            protocol: str = PROTOCOL_ICMP,
-            *,
-            max_hops: int = DEFAULT_MAX_HOPS,
-            packet_size: int = DEFAULT_PACKET_SIZE,
-            timeout: float = DEFAULT_TIMEOUT,
-            queries: int = DEFAULT_QUERIES,
-            interval: float = DEFAULT_INTERVAL,
-            port: int | None = None,
-            as_lookup: bool = False,
+        self,
+        target: str,
+        protocol: str = PROTOCOL_ICMP,
+        *,
+        max_hops: int = DEFAULT_MAX_HOPS,
+        packet_size: int = DEFAULT_PACKET_SIZE,
+        timeout: float = DEFAULT_TIMEOUT,
+        queries: int = DEFAULT_QUERIES,
+        interval: float = DEFAULT_INTERVAL,
+        port: int | None = None,
+        as_lookup: bool = False,
     ):
         """Инициализирует параметры трассировки."""
         self.target = target
@@ -77,18 +76,14 @@ class Traceroute:
         self.target_ip, self.ipv6 = resolve_target(target, port)
         self.whois = WhoisClient(timeout=self.timeout)
 
-    def _payload_size(self, packet) -> int:
+    def _payload_size(self, packet: Packet) -> int:
         """Вычисляет, сколько байт добавить до требуемого размера пакета."""
         base_len = len(bytes(packet))
         return max(self.packet_size - base_len, 0)
 
-    def _build_packet(self, ttl: int, seq: int) -> object:
+    def _build_packet(self, ttl: int, seq: int) -> Any:
         """Собирает пакет выбранного протокола с заданным TTL/HLIM и seq."""
-        base = (
-            IPv6(dst=self.target_ip, hlim=ttl)
-            if self.ipv6
-            else IP(dst=self.target_ip, ttl=ttl)
-        )
+        base = IPv6(dst=self.target_ip, hlim=ttl) if self.ipv6 else IP(dst=self.target_ip, ttl=ttl)
         if self.protocol == "icmp":
             if self.ipv6:
                 icmp_layer = ICMPv6EchoRequest(id=self.packet_id, seq=seq)
@@ -115,22 +110,18 @@ class Traceroute:
             pkt = pkt / Raw(load=b"\x00" * payload_len)
         return pkt
 
-    def _reached_destination(self, reply) -> bool:
+    def _reached_destination(self, reply: Any) -> bool:
         """Проверяет, достигнут ли целевой хост по ответу."""
         if reply is None or reply.src != self.target_ip:
             return False
         if self.protocol == PROTOCOL_ICMP:
-            if (
-                    self.ipv6
-                    and reply.haslayer(ICMPv6EchoReply)
-                    and reply.getlayer(ICMPv6EchoReply).id == self.packet_id
-            ):
+            if self.ipv6 and reply.haslayer(ICMPv6EchoReply) and reply.getlayer(ICMPv6EchoReply).id == self.packet_id:
                 return True
             if (
-                    not self.ipv6
-                    and reply.haslayer(ICMP)
-                    and reply.getlayer(ICMP).type in (0, 129)
-                    and reply.getlayer(ICMP).id == self.packet_id
+                not self.ipv6
+                and reply.haslayer(ICMP)
+                and reply.getlayer(ICMP).type in (0, 129)
+                and reply.getlayer(ICMP).id == self.packet_id
             ):
                 return True
         if self.protocol == PROTOCOL_UDP:

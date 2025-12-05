@@ -37,7 +37,7 @@ class WhoisClient:
         """Извлекает номер AS из текста ответа."""
         matches = self._asn_pattern.findall(response)
         if matches:
-            return matches[0]
+            return str(matches[0])
         return None
 
     def lookup_asn(self, ip: str) -> str | None:

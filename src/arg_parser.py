@@ -14,9 +14,7 @@ from src.defaults import (
 def build_parser() -> argparse.ArgumentParser:
     """Создаёт и настраивает парсер аргументов командной строки."""
     parser = argparse.ArgumentParser(description="Traceroute")
-    parser.add_argument(
-        "-t", "--timeout", type=float, default=DEFAULT_TIMEOUT, help="Таймаут ожидания ответа (сек)"
-    )
+    parser.add_argument("-t", "--timeout", type=float, default=DEFAULT_TIMEOUT, help="Таймаут ожидания ответа (сек)")
     parser.add_argument("-p", "--port", type=int, help="Порт (для TCP или UDP)")
     parser.add_argument(
         "-n",
@@ -26,9 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_MAX_HOPS,
         help="Максимальное число хопов (TTL)",
     )
-    parser.add_argument(
-        "-q", "--queries", type=int, default=DEFAULT_QUERIES, help="Количество запросов на хоп (N)"
-    )
+    parser.add_argument("-q", "--queries", type=int, default=DEFAULT_QUERIES, help="Количество запросов на хоп (N)")
     parser.add_argument(
         "-i",
         "--interval",
@@ -36,9 +32,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_INTERVAL,
         help="Интервал между запросами (сек)",
     )
-    parser.add_argument(
-        "-s", "--packet-size", type=int, default=DEFAULT_PACKET_SIZE, help="Размер пакета (байт)"
-    )
+    parser.add_argument("-s", "--packet-size", type=int, default=DEFAULT_PACKET_SIZE, help="Размер пакета (байт)")
     parser.add_argument(
         "-v",
         "--asn",
